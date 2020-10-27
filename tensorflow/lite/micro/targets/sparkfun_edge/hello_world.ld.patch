@@ -1,0 +1,52 @@
+diff --git a/boards/apollo3_evb/examples/hello_world/gcc/hello_world.ld b/boards/apollo3_evb/examples/hello_world/gcc/hello_world.ld
+--- a/boards/apollo3_evb/examples/hello_world/gcc/hello_world.ld
++++ b/boards/apollo3_evb/examples/hello_world/gcc/hello_world.ld
+@@ -1,6 +1,6 @@
+ /******************************************************************************
+  *
+- * hello_world.ld - Linker script for applications using startup_gnu.c
++ * apollo3evb.ld - Linker script for applications using startup_gcc.c
+  *
+  *****************************************************************************/
+ ENTRY(Reset_Handler)
+@@ -20,12 +20,29 @@
+         KEEP(*(.patch))
+         *(.text)
+         *(.text*)
++
++	/* These are the C++ global constructors.  Stick them all here and
++	 * then walk through the array in main() calling them all.
++	 */
++	_init_array_start = .;
++	KEEP (*(SORT(.init_array*)))
++	_init_array_end = .;
++
++	/* XXX Currently not doing anything for global destructors. */
++
+         *(.rodata)
+         *(.rodata*)
+         . = ALIGN(4);
+         _etext = .;
+     } > FLASH
+ 
++    __exidx_start = .;
++    .ARM.exidx :
++    {
++        *(.ARM.exidx* .gnu.linkonce.armexidx.*)
++    } > FLASH
++    __exidx_end = .;
++    
+     /* User stack section initialized by startup code. */
+     .stack (NOLOAD):
+     {
+@@ -58,6 +75,10 @@
+         . = ALIGN(4);
+         _ebss = .;
+     } > SRAM
++    /* Add this to satisfy reference to symbol "end" from libnosys.a(sbrk.o)
++     * to denote the HEAP start.
++     */
++   end = .;
+ 
+     .ARM.attributes 0 : { *(.ARM.attributes) }
+ }
